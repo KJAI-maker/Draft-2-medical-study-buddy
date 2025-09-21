@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study - Your AI Medical School Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': {
+                            '50': '#eff6ff', '100': '#dbeafe', '200': '#bfdbfe', '300': '#93c5fd', '400': '#60a5fa', '500': '#3b82f6', '600': '#2563eb', '700': '#1d4ed8', '800': '#1e40af', '900': '#1e3a8a'
+                        },
+                        'bkg': 'hsl(220, 20%, 97%)',
+                        'bkg-dark': 'hsl(222, 47%, 11%)',
+                        'surface': 'hsl(0, 0%, 100%)',
+                        'surface-dark': 'hsl(222, 40%, 15%)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bkg);
+        }
+        .dark body {
+            background-color: var(--bkg-dark);
+        }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-bubble-user { 
+            background-color: #2563eb; 
+            color: white; 
+            border-radius: 20px 20px 5px 20px; 
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+        }
+        .chat-bubble-bot { 
+            background-color: #ffffff; 
+            color: #374151; 
+            border-radius: 20px 20px 20px 5px; 
+            border: 1px solid #e5e7eb;
+        }
+        .dark .chat-bubble-bot { 
+            background-color: #1f2937; 
+            color: #d1d5db;
+            border-color: #374151;
+        }
+        #chat-messages::-webkit-scrollbar, #topic-sidebar::-webkit-scrollbar { width: 6px; }
+        #chat-messages::-webkit-scrollbar-track, #topic-sidebar::-webkit-scrollbar-track { background: transparent; }
+        #chat-messages::-webkit-scrollbar-thumb, #topic-sidebar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark #chat-messages::-webkit-scrollbar-thumb, .dark #topic-sidebar::-webkit-scrollbar-thumb { background: #4b5563; }
+        
+        .avatar-preview-bg { 
+            background: radial-gradient(circle, rgba(96,165,250,0.1) 0%, hsla(0, 0%, 100%, 0) 70%); 
+        }
+        .dark .avatar-preview-bg { 
+            background: radial-gradient(circle, rgba(96,165,250,0.1) 0%, hsla(222, 40%, 15%, 0) 70%); 
+        }
+        .tab-btn.active { 
+            border-color: #3b82f6; 
+            color: #3b82f6;
+            background-color: #eff6ff; 
+        }
+        .dark .tab-btn.active { 
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
+        }
+        .chat-bubble-bot pre {
+            background-color: #f3f4f6;
+            color: #111827;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            position: relative;
+            border: 1px solid #e5e7eb;
+        }
+         .dark .chat-bubble-bot pre {
+            background-color: #111827;
+            border-color: #374151;
+            color: #d1d5db;
+         }
+        .copy-code-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: #9ca3af;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .chat-bubble-bot pre:hover .copy-code-btn {
+            opacity: 1;
+        }
+        .mic-btn.recording {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        #study-mode-overlay {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .flashcard {
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+        .flashcard.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .flashcard-face {
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+        .flashcard-back {
+            transform: rotateY(180deg);
+        }
+        details > summary {
+            cursor: pointer;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+        details[open] summary .arrow {
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body class="bg-bkg dark:bg-bkg-dark text-gray-800 dark:text-gray-200 antialiased">
+
+    <div class="w-full text-center p-2 bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 text-sm font-medium border-b border-yellow-200 dark:border-yellow-700">
+        *This is a rough draft. Responses may take 10+ seconds to result.
+    </div>
+
+    <div id="app-container" class="w-full h-[calc(100vh-36px)] flex items-center justify-center p-4 pb-12">
+
+        <!-- Avatar Creation Screen -->
+        <div id="avatar-creation" class="w-full max-w-4xl mx-auto bg-surface dark:bg-surface-dark p-8 rounded-2xl shadow-xl text-center fade-in border border-gray-200 dark:border-gray-700">
+             <h1 class="text-4xl font-extrabold text-gray-800 dark:text-white mb-2">Create Your Avatar</h1>
+            <p class="text-gray-500 dark:text-gray-400 mb-8">Personalize your AI study companion.</p>
+            <div class="flex flex-col md:flex-row gap-8">
+                <div class="md:w-1/3 flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-black/20 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <div class="w-48 h-48 avatar-preview-bg rounded-full flex items-center justify-center mb-4">
+                        <svg id="avatar-preview" class="w-32 h-32" viewBox="0 0 100 100"></svg>
+                    </div>
+                    <input id="avatar-name-input" type="text" placeholder="Companion's Name" class="w-full text-center bg-transparent text-xl font-bold border-b-2 border-gray-300 dark:border-gray-600 focus:outline-none focus:border-primary-500 transition" value="Dr. Axiom">
+                </div>
+                <div class="md:w-2/3 text-left">
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="font-bold mb-2 text-gray-700 dark:text-gray-300">Shape</h3>
+                            <div class="flex border-b border-gray-200 dark:border-gray-700 mb-3">
+                                <button class="tab-btn active flex-1 p-2 font-medium text-gray-500 dark:text-gray-400 border-b-2 transition" data-type="human">Human</button>
+                                <button class="tab-btn flex-1 p-2 font-medium text-gray-500 dark:text-gray-400 border-b-2 transition" data-type="animal">Animal</button>
+                            </div>
+                            <div id="body-options" class="flex flex-wrap gap-3"></div>
+                        </div>
+                        <div> <h3 class="font-bold mb-2 text-gray-700 dark:text-gray-300">Hair</h3> <div id="hair-options" class="flex flex-wrap gap-3"></div> </div>
+                        <div> <h3 class="font-bold mb-2 text-gray-700 dark:text-gray-300">Outfit</h3> <div id="outfit-options" class="flex flex-wrap gap-3"></div> </div>
+                        <div> <h3 class="font-bold mb-2 text-gray-700 dark:text-gray-300">Eyes</h3> <div id="eyes-options" class="flex flex-wrap gap-3"></div> </div>
+                        <div> <h3 class="font-bold mb-2 text-gray-700 dark:text-gray-300">Mouth</h3> <div id="mouth-options" class="flex flex-wrap gap-3"></div> </div>
+                        <div> <h3 class="font-bold mb-2 text-gray-700 dark:text-gray-300">Accessory</h3> <div id="accessory-options" class="flex flex-wrap gap-3"></div> </div>
+                        <div> <h3 class="font-bold mb-2 text-gray-700 dark:text-gray-300">Color</h3> <div id="color-options" class="flex flex-wrap gap-3"></div> </div>
+                    </div>
+                    <button id="start-studying-btn" class="w-full mt-8 bg-primary-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-primary-700 transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-primary-300 shadow-lg shadow-primary-500/20">Start Studying!</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Study Interface -->
+        <div id="study-view" class="hidden w-full h-full max-w-screen-2xl mx-auto flex gap-6 fade-in">
+            <!-- Sidebar -->
+            <nav id="topic-sidebar" class="w-1/4 xl:w-1/5 bg-surface dark:bg-surface-dark rounded-2xl shadow-lg flex flex-col p-4 overflow-y-auto border border-gray-200 dark:border-gray-700">
+                <h2 class="text-xl font-bold p-2 mb-2">Study Platform</h2>
+                <div class="flex-grow">
+                    <div class="p-2 rounded-lg bg-gray-50 dark:bg-black/20 mb-4 border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Dashboard</h3>
+                        <ul id="dashboard-topics" class="space-y-1 text-sm text-gray-600 dark:text-gray-300"><li>No topics yet.</li></ul>
+                        <button id="suggest-topic-btn" class="text-sm text-primary-600 hover:underline mt-2">Suggest a topic?</button>
+                        <button id="study-plan-btn" class="text-sm w-full text-white bg-primary-500 hover:bg-primary-600 mt-3 p-2 rounded-lg font-semibold">Generate Weekly Plan</button>
+                    </div>
+
+                    <div id="flashcard-decks-container" class="mb-4"></div>
+
+                    <div id="curriculum-sections"></div>
+
+                </div>
+                 <!-- Navigation Buttons -->
+                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                    <button id="home-btn" class="w-full flex items-center justify-center gap-2 p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        <span>Home</span>
+                    </button>
+                    <button id="refresh-chat-btn" class="w-full flex items-center justify-center gap-2 p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M4 4l5 5M20 20l-5-5"></path></svg>
+                        <span>New Chat</span>
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Chat Interface -->
+            <div id="chat-interface" class="w-3/4 xl:w-4/5 bg-surface dark:bg-surface-dark rounded-2xl shadow-lg flex flex-col h-full border border-gray-200 dark:border-gray-700">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div id="chat-avatar-display" class="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center p-1"></div>
+                        <div>
+                            <h2 id="chat-name" class="font-bold text-lg"></h2>
+                            <div class="flex items-center space-x-2">
+                                <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Online</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="theme-toggle" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"><svg id="theme-icon-sun" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18a6 6 0 100-12 6 6 0 000 12z"></path></svg><svg id="theme-icon-moon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg></button>
+                </div>
+                <div id="chat-messages" class="flex-1 p-6 space-y-6 overflow-y-auto"></div>
+                <div id="typing-indicator" class="px-6 pb-2 hidden"><div class="chat-bubble-bot p-3 inline-block"><div class="flex items-center space-x-1"><span class="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></span><span class="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-150"></span><span class="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-300"></span></div></div></div>
+                <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                    <form id="chat-form" class="flex items-center space-x-3">
+                        <button type="button" id="mic-btn" class="mic-btn p-3 bg-gray-100 dark:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                        </button>
+                        <input id="chat-input" type="text" placeholder="Ask about any medical topic..." class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow">
+                        <button type="submit" class="bg-primary-600 text-white rounded-full p-3 hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-800 shadow-lg shadow-primary-500/30"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Study Mode Overlay -->
+    <div id="study-mode-overlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40 fade-in"></div>
+    <div id="study-mode-container" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 fade-in">
+        <div id="study-mode-content" class="w-full max-w-2xl bg-surface dark:bg-surface-dark rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 relative">
+            <button id="close-study-mode" class="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div id="study-mode-body" class="p-8">
+                <!-- Content for quiz or flashcards will go here -->
+            </div>
+        </div>
+    </div>
+
+
+    <footer class="absolute bottom-2 left-0 right-0 text-center text-xs text-gray-500 dark:text-gray-400">
+        This was created by: Kerry Calkins
+    </footer>
+
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Firebase Config - Will be populated by the environment
+            const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+            
+            // Firebase Initialization
+            let app, auth, db, userId;
+
+            if (firebaseConfigString) {
+                try {
+                    const firebaseConfig = JSON.parse(firebaseConfigString);
+                    app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+                } catch (e) {
+                    console.error("Firebase initialization failed. Using localStorage fallback.", e);
+                    auth = null; // Ensure auth is null on failure
+                }
+            } else {
+                 console.log("Firebase config not provided. Using localStorage fallback.");
+            }
+            
+            // --- STATE MANAGEMENT ---
+            const state = {
+                currentAvatar: {
+                    bodyType: 'human', body: 'body1', hair: 'hair1', outfit: 'labcoat', eyes: 'eyes1', mouth: 'mouth1', accessory: 'accessory1', color: '#3b82f6'
+                },
+                avatarName: 'Dr. Axiom', chatHistory: [], isLoading: false, flashcardDecks: {}, simulation: { active: false, history: [] }
+            };
+
+            // --- AVATAR & CURRICULUM DATA ---
+            const avatarParts = {
+                human: {
+                    body1: `<path d="M50 40 C 40 40, 35 50, 35 60 L 35 90 C 35 95, 40 100, 50 100 C 60 100, 65 95, 65 90 L 65 60 C 65 50, 60 40, 50 40 Z" /><circle cx="50" cy="25" r="15"/>`,
+                    body2: `<path d="M50,95 C 40,95 35,85 35,75 L 35,55 C 35,45 40,40 50,40 C 60,40 65,45 65,55 L 65,75 C 65,85 60,95 50,95 Z" /><circle cx="50" cy="22" r="18"/>`
+                },
+                animal: {
+                    body1: `<path d="M50,95 C 20,95 10,65 25,40 C 30,30 40,25 50,25 C 60,25 70,30 75,40 C 90,65 80,95 50,95 Z M 30 30 C 20 20, 20 5, 35 10 Z M 70 30 C 80 20, 80 5, 65 10 Z"/>`,
+                    body2: `<path d="M50,95 C 30,95 20,80 20,60 C 20,30 40,15 50,15 C 60,15 80,30 80,60 C 80,80 70,95 50,95 Z" /><path d="M30 30 A 10 10 0 0 1 20 20 A 10 10 0 0 0 30 30" /><path d="M70 30 A 10 10 0 0 0 80 20 A 10 10 0 0 1 70 30" />`,
+                    body3: `<path d="M50 20 C 40 20, 35 30, 35 40 L 35 90 C 35 95, 40 100, 50 100 C 60 100, 65 95, 65 90 L 65 40 C 65 30, 60 20, 50 20 Z" /><path d="M35 50 C 25 50, 25 20, 40 25 Z" /><path d="M65 50 C 75 50, 75 20, 60 25 Z" />`,
+                },
+                hair: {
+                    hair1: `<path d="M35 12 C 40 5, 60 5, 65 12 L 60 20 L 40 20 Z" />`,
+                    hair2: `<path d="M32,22 C 30,10 50,5 50,15 C 50,5 70,10 68,22" fill="none" stroke="currentColor" stroke-width="3" />`,
+                    hair3: `<path d="M35,25 C 25,20 35,5 45,10 C 55,5 65,10 65,10" fill="none" stroke="currentColor" stroke-width="3" />`,
+                    hair4: `<path d="M35,20 L 40,10 L 45,20 L 50,10 L 55,20 L 60,10 L 65,20" fill="none" stroke="currentColor" stroke-width="2" />`,
+                    hair5: `<path d="M35,25 C 30,35 30,45 35,55" fill="none" stroke="currentColor" stroke-width="3" /><path d="M65,25 C 70,35 70,45 65,55" fill="none" stroke="currentColor" stroke-width="3" />`
+                },
+                eyes: {
+                    eyes1: `<circle cx="45" cy="25" r="3" /><circle cx="55" cy="25" r="3" />`,
+                    eyes2: `<rect x="42" y="22" width="6" height="6" /><rect x="52" y="22" width="6" height="6" />`,
+                    eyes3: `<path d="M42 28 Q 45 22 48 28" fill="none" stroke="currentColor" stroke-width="2" /><path d="M52 28 Q 55 22 58 28" fill="none" stroke="currentColor" stroke-width="2" />`,
+                    eyes4: `<path d="M40 22 C 45 22, 45 28, 50 28 C 45 28, 45 22, 40 22 Z" /><path d="M60 22 C 55 22, 55 28, 50 28 C 55 28, 55 22, 60 22 Z" />`,
+                    eyes5: `<circle cx="43" cy="25" r="4.5" /><circle cx="57" cy="25" r="4.5" />`,
+                    eyes6: `<path d="M42 22 l 6 6 m -6 0 l 6 -6" stroke="currentColor" stroke-width="2" /><path d="M52 22 l 6 6 m -6 0 l 6 -6" stroke="currentColor" stroke-width="2" />`,
+                    eyes7: `<path d="M42 24 C 44 28, 46 28, 48 24" fill="none" stroke="currentColor" stroke-width="2" /><path d="M52 24 C 54 28, 56 28, 58 24" fill="none" stroke="currentColor" stroke-width="2" />`
+                },
+                mouth: {
+                    mouth1: `<path d="M45 32 Q 50 35, 55 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`,
+                    mouth2: `<path d="M45 33 Q 50 30, 55 33" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`,
+                    mouth3: `<path d="M42 32 C 45 38, 55 38, 58 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`,
+                    mouth4: `<circle cx="50" cy="34" r="3" fill="none" stroke="currentColor" stroke-width="2"/>`,
+                    mouth5: `<path d="M45 32 C 47 35, 53 35, 55 32 M50 32 L 50 35" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`
+                },
+                outfit: {
+                    none: `<path d=""/>`,
+                    labcoat: `<path d="M35 55 L 30 95 L 70 95 L 65 55 L 55 55 L 55 65 L 45 65 L 45 55 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/> <path d="M45 55 L 35 40 M55 55 L 65 40" fill="none" stroke-width="3"/>`,
+                    scrubs: `<path d="M35 50 L 50 65 L 65 50 L 65 95 L 35 95 Z" fill="rgba(255,255,255,0.2)"/>`
+                },
+                accessory: {
+                    accessory1: `<path d="M50 10 L 50 15 M 40 12 L 60 12" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>`,
+                    accessory2: `<path d="M40 25 C 35 20, 35 30, 40 25 M60 25 C 65 20, 65 30, 60 25" stroke="currentColor" stroke-width="2" fill="none"/> <path d="M45 25 L 55 25" stroke-width="2" fill="none" stroke="currentColor"/>`,
+                    accessory3: `<path d="M50 12 a 10 10 0 0 1 0 -8 a 3 3 0 0 1 0 8" fill="#facc15" />`,
+                    accessory4: `<path d="M40 40 L 45 45 L 50 40 L 55 45 L 60 40 L 50 55 Z" fill="currentColor"/>`,
+                    accessory5: `<path d="M40 8 L 50 2 L 60 8 L 55 15 L 45 15 Z" fill="#facc15" />`,
+                    accessory6: `<path d="M35 15 Q 50 10, 65 15" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>`,
+                    accessory7: `<path d="M40 80 C 30 90, 70 90, 60 80 L 55 95 L 45 95 Z" fill="currentColor" />`
+                },
+                colors: ['#3b82f6', '#ef4444', '#10b981', '#8b5cf6', '#f97316']
+            };
+            const curriculum = {
+              "M1-M2: Foundations": ["Biochemistry", "Cell Biology", "Anatomy", "Histology", "Physiology", "Pharmacology", "Pathology", "Immunology", "Microbiology", "Virology", "Genetics", "Neuroscience"],
+              "USMLE Step 1 Prep": ["High-Yield Biochemistry", "Pathology Principles", "Microbiology & Immunology", "Pharmacology Mechanisms", "UWorld Question Strategy", "NBME Practice Exams", "General Study Strategies"],
+              "COMLEX Level 1 Prep": ["OMM/OMT Foundations", "Chapman's Points", "Viscerosomatic Reflexes", "Cranial Osteopathy", "Biostatistics & Epidemiology"],
+              "M3-M4: Clinicals": ["Internal Medicine", "Surgery", "Pediatrics", "OB/GYN", "Psychiatry", "Neurology", "Family Medicine", "Emergency Medicine", "Sub-Internships"],
+              "Clinical Simulations": ["Chest Pain", "Headache", "Abdominal Pain", "Shortness of Breath", "Altered Mental Status"],
+              "USMLE Step 2 Prep": ["Internal Medicine Shelf", "Surgery Shelf", "Pediatrics Shelf", "OB/GYN Shelf", "Clinical Case Vignettes", "UWorld Blocks (Step 2)", "Ethics & Biostats"],
+              "COMLEX Level 2 Prep": ["OMM in Clinical Cases", "Preventive Medicine", "Health Promotion", "Patient Communication", "COMAT Strategy"],
+              "Residency Applications": ["Writing a Personal Statement", "Building a CV/ERAS Application", "Preference Signaling", "Residency Interview Prep", "Crafting a Rank Order List", "Couples Matching"],
+              "Fellowship Applications": ["Choosing a Subspecialty", "Research & Publications", "Networking for Fellowship", "SF Match / ERAS Fellowships", "Fellowship Interview Prep"]
+            };
+
+            // --- DOM ELEMENTS ---
+            const avatarCreationScreen = document.getElementById('avatar-creation');
+            const studyView = document.getElementById('study-view');
+            const startStudyingBtn = document.getElementById('start-studying-btn');
+            const avatarPreview = document.getElementById('avatar-preview');
+            const avatarNameInput = document.getElementById('avatar-name-input');
+            const chatForm = document.getElementById('chat-form');
+            const chatInput = document.getElementById('chat-input');
+            const chatMessages = document.getElementById('chat-messages');
+            const typingIndicator = document.getElementById('typing-indicator');
+            const chatAvatarDisplay = document.getElementById('chat-avatar-display');
+            const chatNameDisplay = document.getElementById('chat-name');
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIconSun = document.getElementById('theme-icon-sun');
+            const themeIconMoon = document.getElementById('theme-icon-moon');
+            const homeBtn = document.getElementById('home-btn');
+            const refreshChatBtn = document.getElementById('refresh-chat-btn');
+            const micBtn = document.getElementById('mic-btn');
+            const dashboardTopicsList = document.getElementById('dashboard-topics');
+            const suggestTopicBtn = document.getElementById('suggest-topic-btn');
+            const curriculumSectionsContainer = document.getElementById('curriculum-sections');
+            const studyPlanBtn = document.getElementById('study-plan-btn');
+            const flashcardDecksContainer = document.getElementById('flashcard-decks-container');
+
+            const studyModeOverlay = document.getElementById('study-mode-overlay');
+            const studyModeContainer = document.getElementById('study-mode-container');
+            const studyModeBody = document.getElementById('study-mode-body');
+            const closeStudyModeBtn = document.getElementById('close-study-mode');
+
+
+            
+            // --- DATA PERSISTENCE FUNCTIONS ---
+            const saveData = async () => {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const dataToSave = {
+                    avatar: state.currentAvatar,
+                    name: state.avatarName,
+                    history: state.chatHistory,
+                    decks: state.flashcardDecks
+                };
+                if (!userId || !db) {
+                    console.log("No user ID or DB, saving to localStorage");
+                    localStorage.setItem('studyData', JSON.stringify(dataToSave));
+                    return;
+                }
+                try {
+                    const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/study-data`, "userProfile");
+                    await setDoc(userDocRef, dataToSave);
+                } catch (error) {
+                    console.error("Error saving data to Firestore:", error);
+                }
+            };
+
+            const loadData = async () => {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                if (!userId || !db) {
+                    console.log("No user ID or DB, loading from localStorage");
+                    const data = JSON.parse(localStorage.getItem('studyData'));
+                    return data;
+                }
+                try {
+                    const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/study-data`, "userProfile");
+                    const docSnap = await getDoc(userDocRef);
+                    if (docSnap.exists()) {
+                        return docSnap.data();
+                    } else {
+                        return null;
+                    }
+                } catch (error) {
+                    console.error("Error loading data from Firestore:", error);
+                    return null;
+                }
+            };
+
+
+            // --- AVATAR FUNCTIONS ---
+            const renderAvatar = () => {
+                const { bodyType, body, hair, outfit, eyes, mouth, accessory, color } = state.currentAvatar;
+                const bodySvg = avatarParts[bodyType]?.[body] || avatarParts.human.body1;
+                avatarPreview.innerHTML = `
+                    <g fill="${color}" stroke-width="0.5"> ${bodySvg} </g>
+                    ${avatarParts.outfit[outfit]}
+                    ${avatarParts.hair[hair]}
+                    <g fill="currentColor"> ${avatarParts.eyes[eyes]} </g>
+                    ${avatarParts.mouth[mouth]}
+                    ${avatarParts.accessory[accessory]}
+                `;
+                avatarPreview.querySelector('g[fill="'+color+'"]')?.setAttribute('stroke', color);
+            };
+
+            const createOptionButton = (type, key, content, group) => {
+                const button = document.createElement('button');
+                button.className = 'w-12 h-12 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600 transition border border-gray-200 dark:border-gray-700';
+                button.innerHTML = content;
+                button.onclick = () => {
+                    state.currentAvatar[type] = key;
+                    renderAvatar();
+                    document.querySelectorAll(`#${group}-options button`).forEach(btn => btn.classList.remove('ring-2', 'ring-primary-500'));
+                    button.classList.add('ring-2', 'ring-primary-500');
+                };
+                return button;
+            };
+            const createColorOption = (color) => {
+                const button = document.createElement('button');
+                button.className = 'w-10 h-10 rounded-full transition transform hover:scale-110 border-2 border-white/50 dark:border-black/50';
+                button.style.backgroundColor = color;
+                button.onclick = () => {
+                    state.currentAvatar.color = color; renderAvatar();
+                    document.querySelectorAll('#color-options button').forEach(btn => btn.classList.remove('ring-2', 'ring-offset-2', 'dark:ring-offset-gray-800', 'ring-primary-500'));
+                    button.classList.add('ring-2', 'ring-offset-2', 'dark:ring-offset-gray-800', 'ring-primary-500');
+                };
+                return button;
+            };
+            const populateOptions = (bodyType = 'human') => {
+                ['body', 'hair', 'outfit', 'eyes', 'mouth', 'accessory'].forEach(type => {
+                    const container = document.getElementById(`${type}-options`);
+                    if(container) container.innerHTML = '';
+                });
+
+                Object.keys(avatarParts[bodyType]).forEach(key => {
+                    const svg = `<svg viewBox="0 0 100 100" class="w-8 h-8"><g fill="${state.currentAvatar.color}" stroke="${state.currentAvatar.color}" stroke-width="2">${avatarParts[bodyType][key]}</g></svg>`;
+                    const container = document.getElementById('body-options');
+                    if (container) container.appendChild(createOptionButton('body', key, svg, 'body'));
+                });
+                 ['hair', 'outfit', 'eyes', 'mouth', 'accessory'].forEach(type => {
+                    Object.keys(avatarParts[type]).forEach(key => {
+                        const svg = `<svg viewBox="0 0 100 100" class="w-8 h-8 text-gray-600 dark:text-gray-300">${avatarParts[type][key]}</svg>`;
+                        const container = document.getElementById(`${type}-options`);
+                        if (container) container.appendChild(createOptionButton(type, key, svg, type));
+                    });
+                });
+                
+                document.querySelector('#body-options button')?.classList.add('ring-2', 'ring-primary-500');
+                document.querySelector(`#hair-options button[onclick*="'${state.currentAvatar.hair}'"]`)?.classList.add('ring-2', 'ring-primary-500');
+                document.querySelector(`#outfit-options button[onclick*="'${state.currentAvatar.outfit}'"]`)?.classList.add('ring-2', 'ring-primary-500');
+                document.querySelector(`#eyes-options button[onclick*="'${state.currentAvatar.eyes}'"]`)?.classList.add('ring-2', 'ring-primary-500');
+                document.querySelector(`#mouth-options button[onclick*="'${state.currentAvatar.mouth}'"]`)?.classList.add('ring-2', 'ring-primary-500');
+                document.querySelector(`#accessory-options button[onclick*="'${state.currentAvatar.accessory}'"]`)?.classList.add('ring-2', 'ring-primary-500');
+            };
+
+            // --- UI & THEME FUNCTIONS ---
+            const applyTheme = (theme) => {
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    themeIconSun.classList.remove('hidden'); themeIconMoon.classList.add('hidden');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    themeIconSun.classList.add('hidden'); themeIconMoon.classList.remove('hidden');
+                }
+            };
+            
+            // --- CHAT & AI FUNCTIONS ---
+            const scrollToBottom = () => { chatMessages.scrollTop = chatMessages.scrollHeight; };
+            const addUserMessage = (message) => {
+                const messageEl = document.createElement('div');
+                messageEl.className = 'flex justify-end';
+                messageEl.innerHTML = `<div class="chat-bubble-user p-3 max-w-lg">${message}</div>`;
+                chatMessages.appendChild(messageEl); 
+                scrollToBottom();
+            };
+            const simpleMarkdownToHtml = (text) => {
+                let html = text
+                    .replace(/```([\s\S]*?)```/g, (match, code) => `<pre><code>${code.trim()}</code></pre>`)
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/`([^`]+)`/g, '<code class="bg-gray-100 dark:bg-gray-700 text-red-500 rounded px-1 py-0.5">`$1`</code>')
+                    .replace(/^\s*-\s(.*)/gm, '<ul><li class="ml-4 list-disc">$1</li></ul>')
+                    .replace(/\n/g, '<br>');
+                html = html.replace(/<\/ul><br><ul>/g, '');
+                return html;
+            };
+
+            const addBotMessage = (message, isToolResponse = false) => {
+                const messageEl = document.createElement('div');
+                messageEl.className = 'flex justify-start';
+                const formattedMessage = simpleMarkdownToHtml(message);
+                
+                const bubbleId = `bot-msg-${Date.now()}`;
+
+                messageEl.innerHTML = `
+                    <div class="flex items-end space-x-3 w-full">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 p-1 bg-gray-200 dark:bg-gray-700">${avatarPreview.outerHTML}</div>
+                        <div class="flex flex-col w-full max-w-lg">
+                             <div class="chat-bubble-bot p-4">
+                                <div id="${bubbleId}">${formattedMessage}</div>
+                            </div>
+                        </div>
+                    </div>`;
+                
+                if (!isToolResponse) {
+                    const toolContainer = document.createElement('div');
+                    toolContainer.className = 'flex flex-wrap gap-2 mt-2 ml-14 tool-container items-center';
+                    toolContainer.innerHTML = `
+                        <span class="text-xs font-medium text-gray-400 dark:text-gray-500 mr-2">Next steps:</span>
+                        <button class="quiz-btn text-xs bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 px-2 py-1 rounded-md hover:bg-primary-200 dark:hover:bg-primary-900 font-medium">Quiz Me</button>
+                        <button class="flashcard-btn text-xs bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 px-2 py-1 rounded-md hover:bg-primary-200 dark:hover:bg-primary-900 font-medium">Save Flashcards</button>
+                        <button class="simplify-btn text-xs bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 px-2 py-1 rounded-md hover:bg-green-200 dark:hover:bg-green-900 font-medium">Simplify ✨</button>
+                        <button class="mnemonic-btn text-xs bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded-md hover:bg-yellow-200 dark:hover:bg-yellow-900 font-medium">Mnemonic ✨</button>
+                        <button class="visualize-btn text-xs bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 px-2 py-1 rounded-md hover:bg-sky-200 dark:hover:bg-sky-900 font-medium">Visualize 🎨</button>
+                    `;
+                    messageEl.querySelector('.flex.items-end').appendChild(toolContainer);
+                }
+                
+                const speakBtn = document.createElement('button');
+                speakBtn.className = "speak-btn p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 ml-2";
+                speakBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.858 17.142a5 5 0 010-7.072m2.828 9.9a9 9 0 010-12.728M12 12h.01"></path></svg>`;
+                messageEl.querySelector('.flex.items-end > .flex-col').appendChild(speakBtn);
+
+
+                chatMessages.appendChild(messageEl);
+                
+                messageEl.querySelectorAll('pre').forEach(pre => { 
+                    const button = document.createElement('button');
+                    button.className = 'copy-code-btn';
+                    button.textContent = 'Copy';
+                    pre.appendChild(button);
+                    button.addEventListener('click', () => {
+                        const code = pre.querySelector('code').textContent;
+                        navigator.clipboard.writeText(code).then(() => {
+                            button.textContent = 'Copied!';
+                            setTimeout(() => { button.textContent = 'Copy'; }, 2000);
+                        });
+                    });
+                 });
+                scrollToBottom();
+                return document.getElementById(bubbleId);
+            };
+            
+            const getGeminiResponse = async (userQuery, customPrompt, model = 'gemini-2.5-flash-preview-05-20') => {
+                state.isLoading = true; 
+                typingIndicator.classList.remove('hidden'); 
+                scrollToBottom();
+                
+                const apiKey = ""; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}`;
+                
+                if (!customPrompt && !state.simulation.active) {
+                     state.chatHistory.push({role: 'user', parts: [{text: userQuery}]});
+                }
+                 if(state.simulation.active){
+                    state.simulation.history.push({role: 'user', parts: [{text: userQuery}]});
+                }
+                
+                const systemInstructionText = state.simulation.active 
+                    ? state.simulation.systemPrompt
+                    : "You are an expert medical tutor. Your role is to explain complex M1 and M2 level medical school topics, as well as M3/M4 clinical rotation topics, in a clear, concise, and encouraging way. You are also an expert in preparing for the USMLE Step 1 and Step 2 exams, and COMLEX Level 1 and 2. When asked about Step prep topics, provide high-yield facts, study strategies, and advice on how to approach board-style questions. When asked about COMLEX, include osteopathic principles. Break down difficult concepts into simple terms. Keep your answers focused and directly relevant to the user's query. Do not go off-topic. Your persona is friendly, knowledgeable, and supportive. Use markdown for formatting like lists, bolding, and italics where appropriate to improve readability.";
+
+                let contentToUse = state.chatHistory;
+                if(customPrompt) {
+                    contentToUse = [{role: 'user', parts: [{text: customPrompt}]}];
+                } else if(state.simulation.active) {
+                    contentToUse = state.simulation.history;
+                }
+
+                const payload = {
+                    contents: contentToUse,
+                    systemInstruction: { parts: [{ text: systemInstructionText }] },
+                };
+                
+                let botResponse = "";
+                const isToolResponse = !!customPrompt || state.simulation.active;
+                typingIndicator.classList.add('hidden');
+                const messageBubble = addBotMessage("...", isToolResponse);
+                if (messageBubble) messageBubble.innerHTML = `<div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>`;
+
+                
+                try {
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    
+                    let firstChunk = true;
+                    let fullText = "";
+
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+
+                        const chunk = decoder.decode(value);
+                        const lines = chunk.split('\n');
+                        const parsedLines = lines
+                            .map(line => line.replace(/^data: /, '').trim())
+                            .filter(line => line !== "" && line !== "[")
+                            .map(line => JSON.parse(line.replace(/]$/, "")));
+                        
+                        for (const parsedLine of parsedLines) {
+                             const textPart = parsedLine.candidates?.[0]?.content?.parts?.[0]?.text;
+                             if (textPart) {
+                                if (firstChunk) {
+                                    botResponse = textPart;
+                                    firstChunk = false;
+                                } else {
+                                    botResponse += textPart;
+                                }
+                                 if(messageBubble) messageBubble.innerHTML = simpleMarkdownToHtml(botResponse);
+                                 fullText += textPart;
+                                 scrollToBottom();
+                             }
+                        }
+                    }
+                    
+                    if (!customPrompt && !state.simulation.active) {
+                        state.chatHistory.push({role: 'model', parts: [{text: botResponse}]}); 
+                    }
+                    if (state.simulation.active) {
+                        state.simulation.history.push({role: 'model', parts: [{text: botResponse}]});
+                    }
+
+                    saveData();
+                    return fullText;
+
+                } catch (error) {
+                    console.error("Gemini API call failed:", error);
+                    if (messageBubble) messageBubble.innerHTML = "I'm having a little trouble connecting right now. Please try again in a moment.";
+                } finally {
+                    state.isLoading = false; 
+                    const msgContainer = messageBubble?.closest('.flex.justify-start');
+                    if (msgContainer) {
+                        msgContainer.querySelectorAll('pre').forEach(pre => { 
+                            if (!pre.querySelector('.copy-code-btn')) {
+                                const button = document.createElement('button');
+                                button.className = 'copy-code-btn';
+                                button.textContent = 'Copy';
+                                pre.appendChild(button);
+                                button.addEventListener('click', () => {
+                                    const code = pre.querySelector('code').textContent;
+                                    navigator.clipboard.writeText(code).then(() => {
+                                        button.textContent = 'Copied!';
+                                        setTimeout(() => { button.textContent = 'Copy'; }, 2000);
+                                    });
+                                });
+                            }
+                        });
+                    }
+                }
+            };
+            
+            // --- NEW FEATURE FUNCTIONS ---
+
+            const getVisualExplanation = async (prompt, messageContainer) => {
+                const visualContainer = document.createElement('div');
+                visualContainer.className = 'mt-2 ml-14 p-4 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-center';
+                visualContainer.innerHTML = `<div class="text-sm text-gray-500 flex items-center gap-2"><div class="w-4 h-4 border-2 border-gray-300 border-t-primary-500 rounded-full animate-spin"></div>Generating image...</div>`;
+                messageContainer.appendChild(visualContainer);
+
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+                const payload = { instances: [{ prompt: prompt }], parameters: { "sampleCount": 1 } };
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error('Image generation failed');
+                    const result = await response.json();
+                    if (result.predictions && result.predictions[0]?.bytesBase64Encoded) {
+                        const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                        visualContainer.innerHTML = `<img src="${imageUrl}" class="rounded-lg max-w-full" alt="AI generated diagram">`;
+                    } else {
+                        visualContainer.textContent = 'Sorry, I couldn\'t create a visual this time.';
+                    }
+                } catch (error) {
+                    console.error("Image generation failed:", error);
+                    visualContainer.textContent = 'Image generation failed.';
+                }
+            };
+
+            const renderQuiz = (quizText) => {
+                studyModeBody.innerHTML = `<div class="prose dark:prose-invert max-w-none">${simpleMarkdownToHtml(quizText)}</div>`;
+                studyModeOverlay.classList.remove('hidden');
+                studyModeContainer.classList.remove('hidden');
+            };
+
+            const saveFlashcardsFromText = (topic, text) => {
+                const deckName = topic.split(' ').slice(0, 3).join(' ').replace(/[.,]/g, '');
+                if (!state.flashcardDecks[deckName]) {
+                    state.flashcardDecks[deckName] = [];
+                }
+                const cards = text.split(/Front:/).slice(1).map(cardText => {
+                    const parts = cardText.split(/Back:/);
+                    return { front: parts[0].trim(), back: parts[1]?.trim() || '' };
+                });
+                
+                state.flashcardDecks[deckName].push(...cards);
+                addBotMessage(`Added ${cards.length} cards to the "${deckName}" deck. You can review them from the sidebar.`, true);
+                saveData();
+                renderFlashcardDecks();
+            };
+
+            const startFlashcardSession = (deckName) => {
+                const deck = state.flashcardDecks[deckName];
+                let currentCardIndex = 0;
+
+                const renderCard = () => {
+                    const card = deck[currentCardIndex];
+                    studyModeBody.innerHTML = `
+                        <h2 class="text-2xl font-bold mb-4">${deckName} (${currentCardIndex + 1}/${deck.length})</h2>
+                        <div class="perspective-1000">
+                            <div class="flashcard w-full h-64 cursor-pointer">
+                                <div class="flashcard-face absolute w-full h-full p-6 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-center">
+                                    <p>${card.front}</p>
+                                </div>
+                                <div class="flashcard-face flashcard-back absolute w-full h-full p-6 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-center">
+                                    <p>${card.back}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between mt-6">
+                            <button id="prev-card" class="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded-lg" ${currentCardIndex === 0 ? 'disabled' : ''}>Previous</button>
+                            <button id="next-card" class="px-4 py-2 bg-primary-500 text-white rounded-lg" ${currentCardIndex === deck.length - 1 ? 'disabled' : ''}>Next</button>
+                        </div>
+                    `;
+
+                    studyModeBody.querySelector('.flashcard').addEventListener('click', (e) => {
+                        e.currentTarget.classList.toggle('is-flipped');
+                    });
+
+                    studyModeBody.querySelector('#prev-card').addEventListener('click', () => {
+                        if (currentCardIndex > 0) {
+                            currentCardIndex--;
+                            renderCard();
+                        }
+                    });
+                    studyModeBody.querySelector('#next-card').addEventListener('click', () => {
+                        if (currentCardIndex < deck.length - 1) {
+                            currentCardIndex++;
+                            renderCard();
+                        }
+                    });
+                };
+
+                renderCard();
+                studyModeOverlay.classList.remove('hidden');
+                studyModeContainer.classList.remove('hidden');
+            };
+
+            const renderFlashcardDecks = () => {
+                flashcardDecksContainer.innerHTML = '';
+                const deckKeys = Object.keys(state.flashcardDecks);
+                if (deckKeys.length === 0) return;
+
+                const details = document.createElement('details');
+                details.className = "mb-2";
+                details.open = true;
+                details.innerHTML = `
+                    <summary class="text-sm font-semibold text-primary-600 dark:text-primary-400 uppercase tracking-wider px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700/50 flex justify-between items-center">
+                        Flashcard Decks (${deckKeys.length})
+                        <svg class="arrow w-4 h-4 transition-transform transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </summary>
+                `;
+                const ul = document.createElement('ul');
+                ul.className = 'space-y-1 mt-1';
+                deckKeys.forEach(deckName => {
+                    const li = document.createElement('li');
+                    const button = document.createElement('button');
+                    button.className = 'topic-link w-full text-left flex items-center p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 font-medium';
+                    button.textContent = `${deckName} (${state.flashcardDecks[deckName].length} cards)`;
+                    button.onclick = () => startFlashcardSession(deckName);
+                    li.appendChild(button);
+                    ul.appendChild(li);
+                });
+                details.appendChild(ul);
+                flashcardDecksContainer.appendChild(details);
+            };
+
+             const startClinicalSimulation = (complaint) => {
+                state.simulation.active = true;
+                state.simulation.history = [];
+                state.simulation.systemPrompt = `You are role-playing as a patient in a clinical encounter simulation. The student doctor will be taking your history. Your chief complaint is ${complaint}. You must respond naturally as a patient would, only providing information that is directly asked of you. Do not volunteer your diagnosis or unprompted symptoms. Be consistent with your persona. The student must lead the conversation. After about 5-7 questions from the student, reveal a new piece of information or a slightly changed symptom to challenge them. When the student types "END SIMULATION", you must provide a detailed critique of their performance, including what they did well, what questions they missed, and what their differential diagnosis should be based on the information gathered.`;
+                resetChat(true);
+                addUserMessage(`Starting simulation: Patient with ${complaint}.`);
+                const openingLine = `Hello doctor, thanks for seeing me. I've been having some ${complaint.toLowerCase()}...`;
+                addBotMessage(openingLine, true);
+                state.simulation.history.push({role: 'model', parts: [{text: openingLine}]});
+            };
+
+            // --- VOICE & DASHBOARD FUNCTIONS ---
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.interimResults = true;
+            recognition.onresult = event => {
+                const transcript = Array.from(event.results).map(result => result[0]).map(result => result.transcript).join('');
+                chatInput.value = transcript;
+            };
+            recognition.onend = () => micBtn.classList.remove('recording');
+
+            const updateDashboard = (topic) => {
+                dashboardTopicsList.innerHTML = '';
+                 if (!topic) { // Initial load
+                    const topics = JSON.parse(localStorage.getItem('studyDashboard') || '[]');
+                    if (topics.length === 0) {
+                        dashboardTopicsList.innerHTML = '<li>No topics yet.</li>';
+                    } else {
+                        topics.forEach(t => {
+                            const li = document.createElement('li');
+                            li.textContent = `- ${t}`;
+                            dashboardTopicsList.appendChild(li);
+                        });
+                    }
+                    return;
+                }
+
+                let topics = JSON.parse(localStorage.getItem('studyDashboard') || '[]');
+                if (!topics.includes(topic)) {
+                    topics.push(topic);
+                    localStorage.setItem('studyDashboard', JSON.stringify(topics));
+                }
+                
+                topics.forEach(t => {
+                    const li = document.createElement('li');
+                    li.textContent = `- ${t}`;
+                    dashboardTopicsList.appendChild(li);
+                });
+            };
+
+            // --- EVENT LISTENERS ---
+            document.querySelectorAll('.tab-btn').forEach(btn => { 
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.currentAvatar.bodyType = btn.dataset.type;
+                    state.currentAvatar.body = Object.keys(avatarParts[btn.dataset.type])[0];
+                    populateOptions(btn.dataset.type);
+                    renderAvatar();
+                });
+             });
+
+            themeToggle.addEventListener('click', () => {
+                const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+                localStorage.setItem('theme', newTheme); applyTheme(newTheme);
+            });
+            
+            startStudyingBtn.addEventListener('click', async () => {
+                state.avatarName = avatarNameInput.value || "Dr. Axiom";
+                await saveData();
+                avatarCreationScreen.classList.add('hidden');
+                studyView.classList.remove('hidden');
+                chatAvatarDisplay.innerHTML = avatarPreview.outerHTML;
+                chatNameDisplay.textContent = state.avatarName;
+                resetChat(false);
+            });
+
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const userInput = chatInput.value.trim();
+                if (userInput && !state.isLoading) {
+                    addUserMessage(userInput); 
+                    getGeminiResponse(userInput); 
+                    if (userInput.toLowerCase() === "end simulation") {
+                        state.simulation.active = false;
+                    }
+                    chatInput.value = '';
+                }
+            });
+
+            chatMessages.addEventListener('click', e => {
+                const messageContainer = e.target.closest('.flex.justify-start');
+                if (!messageContainer) return;
+                
+                const chatHistoryIndex = Array.from(chatMessages.children).filter(el => el.classList.contains('flex') && el.classList.contains('justify-start')).indexOf(messageContainer);
+                const modelMessages = state.chatHistory.filter(m => m.role === 'model');
+                const lastMessage = modelMessages[chatHistoryIndex]?.parts[0].text;
+                
+                if (!lastMessage) return;
+
+                if (e.target.closest('.quiz-btn')) {
+                    const prompt = `Based on the previous topic:\n\n${lastMessage}\n\nCreate a 2-question multiple-choice quiz in USMLE/COMLEX style. Provide answers and detailed explanations after the questions.`;
+                    getGeminiResponse(null, prompt).then(text => {if (text) renderQuiz(text)});
+                } else if (e.target.closest('.flashcard-btn')) {
+                    const prompt = `Based on the previous topic:\n\n${lastMessage}\n\nCreate a set of 4 high-yield flashcards. Format them clearly with "Front:" and "Back:" for each card.`;
+                    getGeminiResponse(null, prompt).then(text => {
+                        if (text) saveFlashcardsFromText(lastMessage, text)
+                    });
+                } else if (e.target.closest('.simplify-btn')) {
+                    const prompt = `Explain the core concepts from the following text using a simple analogy. Break it down as if you were explaining it to a complete beginner:\n\n${lastMessage}\n\n`;
+                    getGeminiResponse(null, prompt);
+                } else if (e.target.closest('.mnemonic-btn')) {
+                    const prompt = `Based on the key information in the following text, create a clever and memorable mnemonic to help a medical student remember it. Explain the mnemonic briefly.\n\n${lastMessage}\n\n`;
+                    getGeminiResponse(null, prompt);
+                } else if (e.target.closest('.visualize-btn')) {
+                    const prompt = `Create a clear, simple, educational diagram illustrating the main concepts from the following text. Use clean lines and clear labels. The image should be visually appealing for a medical student's study guide.\n\n${lastMessage}`;
+                    getVisualExplanation(prompt, messageContainer);
+                } else if (e.target.closest('.speak-btn')) {
+                    const textToSpeak = messageContainer.querySelector('.chat-bubble-bot').innerText;
+                    speechSynthesis.cancel();
+                    speechSynthesis.speak(new SpeechSynthesisUtterance(textToSpeak));
+                }
+            });
+
+            micBtn.addEventListener('click', () => {
+                micBtn.classList.add('recording');
+                recognition.start();
+            });
+
+            suggestTopicBtn.addEventListener('click', () => {
+                const recentHistory = state.chatHistory.slice(-4).map(h => `${h.role}: ${h.parts[0].text}`).join('\n');
+                const prompt = `Based on this recent conversation, what is a single, related medical topic I should study next to deepen my understanding? Just give me the name of the topic, nothing else.\n\n${recentHistory}`;
+                getGeminiResponse(null, prompt);
+            });
+            
+             studyPlanBtn.addEventListener('click', () => {
+                const dashboardTopicsText = (JSON.parse(localStorage.getItem('studyDashboard') || '[]')).join(', ');
+                const recentHistory = state.chatHistory.slice(-5).map(h => h.parts[0].text).join('\n');
+                const prompt = `I am a medical student. Based on the topics I've recently covered (${dashboardTopicsText}) and my recent conversation history, create a concise, 7-day study plan to help me review and expand my knowledge. Focus on related high-yield topics. Present it in a clear, day-by-day markdown format. \n\nRecent conversation:\n${recentHistory}`;
+                addUserMessage("Can you generate a weekly study plan for me?");
+                getGeminiResponse(null, prompt);
+            });
+
+            closeStudyModeBtn.addEventListener('click', () => {
+                studyModeOverlay.classList.add('hidden');
+                studyModeContainer.classList.add('hidden');
+                studyModeBody.innerHTML = '';
+                state.simulation.active = false;
+            });
+
+            const populateTopics = () => {
+              const curriculumOrder = [
+                  "M1-M2: Foundations", "USMLE Step 1 Prep", "COMLEX Level 1 Prep",
+                  "M3-M4: Clinicals", "Clinical Simulations", "USMLE Step 2 Prep", "COMLEX Level 2 Prep",
+                  "Residency Applications", "Fellowship Applications"
+              ];
+              
+              curriculumOrder.forEach(key => {
+                  const details = document.createElement('details');
+                  details.className = "mb-2";
+                  details.innerHTML = `
+                    <summary class="text-sm font-semibold text-primary-600 dark:text-primary-400 uppercase tracking-wider px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700/50 flex justify-between items-center">
+                        <span>${key}</span>
+                        <svg class="arrow w-4 h-4 transition-transform transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </summary>
+                  `;
+                  const ul = document.createElement('ul');
+                  ul.className = 'space-y-1 mt-1';
+                  
+                  curriculum[key].forEach(topic => {
+                      const li = document.createElement('li');
+                      const link = document.createElement('a');
+                      link.href = "#";
+                      link.className = "topic-link flex items-center p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 font-medium";
+                      link.textContent = topic;
+                      link.onclick = (e) => {
+                          e.preventDefault();
+                          if(state.isLoading) return;
+                          
+                          if(key === "Clinical Simulations") {
+                            startClinicalSimulation(topic);
+                          } else {
+                            updateDashboard(topic);
+                            const query = `Please give me a comprehensive overview of ${topic} for a medical student.`;
+                            addUserMessage(`Tell me about ${topic}.`);
+                            getGeminiResponse(query);
+                          }
+                      };
+                      li.appendChild(link);
+                      ul.appendChild(li);
+                  });
+                  details.appendChild(ul);
+                  curriculumSectionsContainer.appendChild(details);
+              });
+            };
+            
+            const resetChat = (clearHistory = true) => {
+                chatMessages.innerHTML = '';
+                if (clearHistory) {
+                    state.chatHistory = [];
+                    state.simulation.active = false;
+                    localStorage.removeItem('studyDashboard');
+                    updateDashboard();
+                }
+                
+                if (state.chatHistory.length === 0) {
+                    const welcomeMessage = `Hello! I'm ${state.avatarName}. Select a topic from the sidebar, or ask me anything about your medical curriculum.`;
+                    addBotMessage(welcomeMessage);
+                    state.chatHistory.push({role: 'model', parts: [{text: welcomeMessage}]});
+                } else {
+                    state.chatHistory.forEach(msg => {
+                        if (msg.role === 'user') addUserMessage(msg.parts[0].text);
+                        else addBotMessage(msg.parts[0].text);
+                    });
+                }
+                saveData();
+            };
+
+            homeBtn.addEventListener('click', () => window.location.reload());
+            refreshChatBtn.addEventListener('click', () => resetChat(true));
+            
+            const init = async () => {
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                applyTheme(savedTheme);
+                populateTopics();
+                avatarParts.colors.forEach(color => { document.getElementById('color-options').appendChild(createColorOption(color)); });
+                document.querySelector('#color-options button')?.classList.add('ring-2', 'ring-offset-2', 'dark:ring-offset-gray-800', 'ring-primary-500');
+
+                if (auth) {
+                    onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            userId = user.uid;
+                        }
+                        const data = await loadData();
+                        if (data) {
+                            state.currentAvatar = data.avatar || state.currentAvatar;
+                            state.avatarName = data.name || state.avatarName;
+                            state.chatHistory = data.history || [];
+                            state.flashcardDecks = data.decks || {};
+                            avatarNameInput.value = state.avatarName;
+                        }
+                        populateOptions(state.currentAvatar.bodyType);
+                        renderAvatar();
+                        renderFlashcardDecks();
+                    });
+
+                    try {
+                        const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                        if (authToken) {
+                            await signInWithCustomToken(auth, authToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (e) { 
+                        console.error("Authentication failed", e);
+                        const data = await loadData();
+                        if (data) {
+                           state.currentAvatar = data.avatar || state.currentAvatar;
+                           state.avatarName = data.name || state.avatarName;
+                           state.chatHistory = data.history || [];
+                           state.flashcardDecks = data.decks || {};
+                           avatarNameInput.value = state.avatarName;
+                        }
+                        populateOptions(state.currentAvatar.bodyType);
+                        renderAvatar();
+                        renderFlashcardDecks();
+                    }
+                } else {
+                    const data = await loadData();
+                    if (data) {
+                        state.currentAvatar = data.avatar || state.currentAvatar;
+                        state.avatarName = data.name || state.avatarName;
+                        state.chatHistory = data.history || [];
+                        state.flashcardDecks = data.decks || {};
+                        avatarNameInput.value = state.avatarName;
+                    }
+                    populateOptions(state.currentAvatar.bodyType);
+                    renderAvatar();
+                    renderFlashcardDecks();
+                }
+                updateDashboard();
+            };
+            
+            init();
+        });
+    </script>
+</body>
+</html>
